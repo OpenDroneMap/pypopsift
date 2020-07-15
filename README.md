@@ -16,6 +16,13 @@ Requirements:
 # make -j8
 ```
 
+To install the Python package:
+
+```
+# cd pypopsift
+# pip install .
+```
+
 ## Usage
 
 ```
