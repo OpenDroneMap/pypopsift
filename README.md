@@ -11,7 +11,7 @@ Requirements:
  * A C++11 capable compiler (g++ 5.4.0 works fine)
 
 ```
-# git clone https://github.com/uav4geo/pypopsift
+# git clone --recurse-submodules https://github.com/uav4geo/pypopsift
 # cd pypopsift && mkdir build && cd build
 # make -j8
 ```
