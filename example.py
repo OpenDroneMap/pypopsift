@@ -1,8 +1,14 @@
 import cv2
 import numpy as np
 from pypopsift import popsift
+import time
 
-filename = "/datasets/brighton2/images/DJI_0018.JPG"
+print("Loading image...")
+
+files = [
+    "/datasets/brighton2/images/DJI_0018.JPG",
+    "/datasets/brighton2/images/DJI_0019.JPG",
+]
 config = {
     'sift_peak_threshold': 0.1,
     'sift_edge_threshold': 10.0,
@@ -22,24 +28,43 @@ def resized_image(image, config):
     else:
         return image
 
-flags = cv2.IMREAD_COLOR
-image = cv2.imread(filename, flags)
+def get_downsampling(image, config):
+    max_size = config['feature_process_size']
+    h, w, _ = image.shape
+    size = max(w, h)
+    if 0 < max_size < size:
+        if w == size:
+            return w / float(max_size)
+        elif h == size:
+            return h / float(max_size)
+    else:
+        return -1
 
-if image is None:
-    raise IOError("Unable to load image {}".format(filename))
+for filename in files:
+    flags = cv2.IMREAD_COLOR
+    image = cv2.imread(filename, flags)
 
-if len(image.shape) == 3:
-    image[:, :, :3] = image[:, :, [2, 1, 0]]
+    if image is None:
+        raise IOError("Unable to load image {}".format(filename))
 
-assert len(image.shape) == 3
-image = resized_image(image, config)
-image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    if len(image.shape) == 3:
+        image[:, :, :3] = image[:, :, [2, 1, 0]]
 
-points, desc = popsift(image.astype(np.float32) / 255,  # values between 0, 1
-                            peak_threshold=config['sift_peak_threshold'],
-                            edge_threshold=config['sift_edge_threshold'],
-                            target_num_features=config['feature_min_frames'])
-print(points.shape)
-print(points)
-print(desc.shape)
-print(desc)
+    assert len(image.shape) == 3
+    image = resized_image(image, config)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+    print("Computing features...")
+    start = time.time()
+    points, desc = popsift(image.astype(np.float32) / 255,  # values between 0, 1
+                                peak_threshold=config['sift_peak_threshold'],
+                                edge_threshold=config['sift_edge_threshold'],
+                                target_num_features=config['feature_min_frames'],
+                                downsampling=downsampling)
+
+    print(points.shape)
+    print(points)
+    print(desc.shape)
+    print(desc)
+    print("Features computed in {:.3f} seconds".format(time.time() - start))
+

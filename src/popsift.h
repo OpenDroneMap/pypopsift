@@ -45,12 +45,16 @@ class PopSiftContext{
 
     float peak_threshold = 0;
     float edge_threshold = 0;
+    bool use_root = true;
+    float downsampling = 0;
 public:
     PopSiftContext();
     ~PopSiftContext();
 
     void setup(float peak_threshold,
-                float edge_threshold);
+                float edge_threshold,
+                bool use_root,
+                float downsampling);
 
     PopSift *get();
 };
@@ -58,6 +62,8 @@ public:
 py::object popsift(pyarray_f image,
                  float peak_threshold,
                  float edge_threshold,
-                 int target_num_features);
+                 int target_num_features,
+                 bool use_root,
+                 float downsampling);
 
 }

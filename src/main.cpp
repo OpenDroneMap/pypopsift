@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
 #include "popsift.h"
 
-namespace py = pybind11; // TODO REMOVE?
+namespace py = pybind11;
 
 PYBIND11_MODULE(pypopsift, m) {
     m.doc() = R"pbdoc(
@@ -20,7 +20,9 @@ PYBIND11_MODULE(pypopsift, m) {
         py::arg("image"),
         py::arg("peak_threshold") = 0.1,
         py::arg("edge_threshold") = 10,
-        py::arg("target_num_features") = 4000
+        py::arg("target_num_features") = 4000,
+        py::arg("use_root") = true,
+        py::arg("downsampling") = -1
     );
 
 #ifdef VERSION_INFO

@@ -1,5 +1,7 @@
 
 #include "popsift.h"
+#include <algorithm>
+#include <cmath>
 
 namespace pps{
 
@@ -18,25 +20,29 @@ PopSiftContext::~PopSiftContext(){
     ps = nullptr;
 }
 
-void PopSiftContext::setup(float peak_threshold, float edge_threshold){
+void PopSiftContext::setup(float peak_threshold, float edge_threshold, bool use_root, float downsampling){
     bool changed = false;
     if (this->peak_threshold != peak_threshold) { this->peak_threshold = peak_threshold; changed = true; }
     if (this->edge_threshold != edge_threshold) { this->edge_threshold = edge_threshold; changed = true; }
-    
+    if (this->use_root != use_root) { this->use_root = use_root; changed = true; }
+    if (this->downsampling != downsampling) { this->downsampling = downsampling; changed = true; }
+
     if (changed){
         config.setThreshold(peak_threshold);
         config.setEdgeLimit(edge_threshold);
-
-        // TODO: root sift config
-        //config.setNormMode(rootSift ? popsift::Config::RootSift : popsift::Config::Classic);
+        config.setNormMode(use_root ? popsift::Config::RootSift : popsift::Config::Classic );
         config.setFilterSorting(popsift::Config::LargestScaleFirst);
-        // TODO: more?
+        config.setMode(popsift::Config::OpenCV);
+        config.setDownsampling(downsampling);
+        // config.setOctaves(4);
+        // config.setLevels(3);
 
         // Rebuild ps object
         if (ps){
             ps->uninit();
             delete ps;
         }
+
         ps = new PopSift(config,
                     popsift::Config::ProcessingMode::ExtractingMode,
                     PopSift::FloatImages );
@@ -50,7 +56,9 @@ PopSift *PopSiftContext::get(){
 py::object popsift(pyarray_f image,
                  float peak_threshold,
                  float edge_threshold,
-                 int target_num_features) {
+                 int target_num_features,
+                 bool use_root,
+                 float downsampling) {
     py::gil_scoped_release release;
 
     if (!image.size()) return py::none();
@@ -62,14 +70,10 @@ py::object popsift(pyarray_f image,
     int numFeatures = 0;
     
     while(true){
-        ctx->setup(peak_threshold, edge_threshold);
+        ctx->setup(peak_threshold, edge_threshold, use_root, downsampling);
         std::unique_ptr<SiftJob> job(ctx->get()->enqueue( width, height, image.data() ));
         std::unique_ptr<popsift::Features> result(job->get());
         numFeatures = result->getFeatureCount();
-
-        // std::cerr << "Number of feature points: " << result->getFeatureCount()
-        //      << " number of feature descriptors: " << result->getDescriptorCount()
-        //      << std::endl;
 
         if (numFeatures >= target_num_features || peak_threshold < 0.0001){
             popsift::Feature* feature_list = result->getFeatures();
@@ -86,8 +90,8 @@ py::object popsift(pyarray_f image,
                         desc[128 * i + k] = pDesc->features[k];
                     }
 
-                    points[4 * i + 0] = pFeat.xpos;
-                    points[4 * i + 1] = pFeat.ypos;
+                    points[4 * i + 0] = std::min<float>(std::round(pFeat.xpos), width - 1);
+                    points[4 * i + 1] = std::min<float>(std::round(pFeat.ypos), height - 1);
                     points[4 * i + 2] = pFeat.sigma;
                     points[4 * i + 3] = pFeat.orientation[oriIdx];
                 }
