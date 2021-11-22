@@ -8,8 +8,8 @@ include(FetchContent)
 set(PopSift_BUILD_EXAMPLES OFF)
 FetchContent_Declare(
   popsift
-  GIT_REPOSITORY https://github.com/alicevision/popsift/
-  GIT_TAG        b584a125be8154c81a2b6cd46cc73e2b3a014e38
+  GIT_REPOSITORY https://github.com/uav4geo/popsift/
+  GIT_TAG        develop
 )
 set(FETCHCONTENT_QUIET OFF)
 FetchContent_MakeAvailable(popsift)

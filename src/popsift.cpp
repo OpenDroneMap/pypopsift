@@ -2,14 +2,14 @@
 #include "popsift.h"
 #include <algorithm>
 #include <cmath>
+#include <mutex>
 
 namespace pps{
 
 PopSiftContext *ctx = nullptr;
+std::mutex g_mutex;
 
 PopSiftContext::PopSiftContext() : ps(nullptr){
-    cudaDeviceReset();
-
     popsift::cuda::device_prop_t deviceInfo;
     deviceInfo.set(0, false);
 }
@@ -37,15 +37,13 @@ void PopSiftContext::setup(float peak_threshold, float edge_threshold, bool use_
         // config.setOctaves(4);
         // config.setLevels(3);
 
-        // Rebuild ps object
-        if (ps){
-            ps->uninit();
-            delete ps;
+        if (!ps){
+            ps = new PopSift(config,
+                        popsift::Config::ProcessingMode::ExtractingMode,
+                        PopSift::ByteImages );
+        }else{
+            ps->configure(config, false);
         }
-
-        ps = new PopSift(config,
-                    popsift::Config::ProcessingMode::ExtractingMode,
-                    PopSift::FloatImages );
     }
 }
 
@@ -53,7 +51,7 @@ PopSift *PopSiftContext::get(){
     return ps;
 }
 
-py::object popsift(pyarray_f image,
+py::object popsift(pyarray_uint8 image,
                  float peak_threshold,
                  float edge_threshold,
                  int target_num_features,
@@ -70,9 +68,12 @@ py::object popsift(pyarray_f image,
     int numFeatures = 0;
     
     while(true){
+        g_mutex.lock();
         ctx->setup(peak_threshold, edge_threshold, use_root, downsampling);
         std::unique_ptr<SiftJob> job(ctx->get()->enqueue( width, height, image.data() ));
         std::unique_ptr<popsift::Features> result(job->get());
+        g_mutex.unlock();
+
         numFeatures = result->getFeatureCount();
 
         if (numFeatures >= target_num_features || peak_threshold < 0.0001){
@@ -102,8 +103,8 @@ py::object popsift(pyarray_f image,
             retn.append(py_array_from_data(&desc[0], numFeatures, 128));
             return retn;
         }else{
-            // Lower peak threshold if we don't meet the target
-            peak_threshold = (peak_threshold * 2.0) / 3.0;
+           // Lower peak threshold if we don't meet the target
+           peak_threshold = (peak_threshold * 2.0) / 3.0;
         }
     }
 

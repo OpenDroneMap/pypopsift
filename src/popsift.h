@@ -59,7 +59,7 @@ public:
     PopSift *get();
 };
 
-py::object popsift(pyarray_f image,
+py::object popsift(pyarray_uint8 image,
                  float peak_threshold,
                  float edge_threshold,
                  int target_num_features,

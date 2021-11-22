@@ -63,7 +63,7 @@ assert len(image.shape) == 3
 image = resized_image(image, config)
 image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
-points, desc = popsift(image.astype(np.float32) / 255,  # values between 0, 1
+points, desc = popsift(image.astype(np.uint8),  # values between 0, 1
                             peak_threshold=config['sift_peak_threshold'],
                             edge_threshold=config['sift_edge_threshold'],
                             target_num_features=config['feature_min_frames'])
