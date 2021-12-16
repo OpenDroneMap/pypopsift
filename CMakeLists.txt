@@ -22,12 +22,14 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(pybind11)
 if(NOT pybind11_POPULATED)
-  FetchContent_Populate(depname)
+  FetchContent_Populate(pybind11)
 
   add_subdirectory(${pybind11_SOURCE_DIR})
 endif()
 
-add_subdirectory(pybind11)
-
 pybind11_add_module(pypopsift src/main.cpp src/popsift.cpp)
 target_link_libraries(pypopsift PUBLIC popsift)
+
+if (DEFINED OUTPUT_DIR)
+    set_target_properties(pypopsift PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+endif()

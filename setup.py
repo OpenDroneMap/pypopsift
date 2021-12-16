@@ -68,7 +68,7 @@ class CMakeBuild(build_ext):
 
 setup(
     name=PACKAGE_NAME,
-    version='1.0.1',
+    version='1.0.2',
     author='Piero Toffanin',
     author_email='pt@uav4geo.com',
     description='Python module for CUDA accelerated GPU SIFT ',
