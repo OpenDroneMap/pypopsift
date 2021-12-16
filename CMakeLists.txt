@@ -18,3 +18,7 @@ add_subdirectory(pybind11)
 
 pybind11_add_module(pypopsift src/main.cpp src/popsift.cpp)
 target_link_libraries(pypopsift PUBLIC popsift)
+
+if (DEFINED OUTPUT_DIR)
+    set_target_properties(pypopsift PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+endif()
