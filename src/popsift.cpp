@@ -57,11 +57,11 @@ py::object popsift(pyarray_uint8 image,
                  int target_num_features,
                  bool use_root,
                  float downsampling) {
-    py::gil_scoped_release release;
-
     if (!image.size()) return py::none();
 
     if (!ctx) ctx = new PopSiftContext();
+
+    py::gil_scoped_release release;
 
     int width = image.shape(1);
     int height = image.shape(0);

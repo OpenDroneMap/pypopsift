@@ -6,15 +6,14 @@ import time
 print("Loading image...")
 
 files = [
-    "/datasets/brighton2/images/DJI_0018.JPG",
-    "/datasets/brighton2/images/DJI_0019.JPG",
+    "/datasets/brighton2/images/DJI_0032.JPG",
 ]
 config = {
-    'sift_peak_threshold': 0.1,
+    'sift_peak_threshold': 0.06,
     'sift_edge_threshold': 10.0,
     'feature_min_frames': 8000,
     'feature_use_adaptive_suppression': False,
-    'feature_process_size': 2048
+    'feature_process_size': 2000
 }
 
 def resized_image(image, config):
@@ -30,7 +29,7 @@ def resized_image(image, config):
 
 def get_downsampling(image, config):
     max_size = config['feature_process_size']
-    h, w, _ = image.shape
+    h, w = image.shape
     size = max(w, h)
     if 0 < max_size < size:
         if w == size:
@@ -55,12 +54,12 @@ for filename in files:
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
     print("Computing features...")
+    print(image.shape)
     start = time.time()
-    points, desc = popsift(image.astype(np.float32) / 255,  # values between 0, 1
-                                peak_threshold=config['sift_peak_threshold'],
-                                edge_threshold=config['sift_edge_threshold'],
-                                target_num_features=config['feature_min_frames'],
-                                downsampling=downsampling)
+    points, desc = popsift(image,
+                            peak_threshold=config['sift_peak_threshold'],
+                            edge_threshold=config['sift_edge_threshold'],
+                            target_num_features=config['feature_min_frames'])
 
     print(points.shape)
     print(points)
