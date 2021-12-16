@@ -14,6 +14,19 @@ FetchContent_Declare(
 set(FETCHCONTENT_QUIET OFF)
 FetchContent_MakeAvailable(popsift)
 
+FetchContent_Declare(
+  pybind11
+  GIT_REPOSITORY https://github.com/pybind/pybind11
+  GIT_TAG        aa982e131d723e2e428245847c0bc75693a11569
+)
+
+FetchContent_GetProperties(pybind11)
+if(NOT pybind11_POPULATED)
+  FetchContent_Populate(depname)
+
+  add_subdirectory(${pybind11_SOURCE_DIR})
+endif()
+
 add_subdirectory(pybind11)
 
 pybind11_add_module(pypopsift src/main.cpp src/popsift.cpp)
