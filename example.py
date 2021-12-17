@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from pypopsift import popsift
+from pypopsift import popsift, fits_texture
 import time
 
 print("Loading image...")
@@ -52,6 +52,11 @@ for filename in files:
     assert len(image.shape) == 3
     image = resized_image(image, config)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+    print("Test texture size...")
+    if not fits_texture(image.shape[1], image.shape[0]):
+        print("%s does not fit into GPU memory!" % filename)
+        exit(1)
 
     print("Computing features...")
     print(image.shape)

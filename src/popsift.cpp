@@ -112,4 +112,12 @@ py::object popsift(pyarray_uint8 image,
     return py::none();
 }
 
+bool fitsTexture(int width, int height, float downsampling){
+    if (!ctx) ctx = new PopSiftContext();
+    ctx->setup(0.06, 10, true, downsampling);
+
+    PopSift::AllocTest a = ctx->get()->testTextureFit( width, height );
+    return a == PopSift::AllocTest::Ok;
+}
+
 }

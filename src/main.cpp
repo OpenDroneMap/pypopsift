@@ -25,6 +25,11 @@ PYBIND11_MODULE(pypopsift, m) {
         py::arg("downsampling") = -1
     );
 
+    m.def("fits_texture", pps::fitsTexture,
+            py::arg("width"),
+            py::arg("height"),
+            py::arg("downsampling") = -1);
+
 #ifdef VERSION_INFO
     m.attr("__version__") = VERSION_INFO;
 #else

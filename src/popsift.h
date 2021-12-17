@@ -66,4 +66,6 @@ py::object popsift(pyarray_uint8 image,
                  bool use_root,
                  float downsampling);
 
+bool fitsTexture(int width, int height, float downsampling);
+
 }
