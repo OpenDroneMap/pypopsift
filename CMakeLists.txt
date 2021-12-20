@@ -21,4 +21,7 @@ target_link_libraries(pypopsift PUBLIC popsift)
 
 if (DEFINED OUTPUT_DIR)
     set_target_properties(pypopsift PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+    set_target_properties(pypopsift PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIR}")
+    set_target_properties(pypopsift PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIR}")
+    set_target_properties(pypopsift PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT_DIR}")
 endif()
