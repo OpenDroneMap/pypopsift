@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 
-set(PopSift_BUILD_EXAMPLES OFF)
+set(PopSift_BUILD_EXAMPLES OFF CACHE INTERNAL "")
 FetchContent_Declare(
   popsift
   GIT_REPOSITORY https://github.com/uav4geo/popsift/
