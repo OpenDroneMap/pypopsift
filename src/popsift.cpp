@@ -10,14 +10,29 @@ PopSiftContext *ctx = nullptr;
 std::mutex g_mutex;
 
 PopSiftContext::PopSiftContext() : ps(nullptr){
+    // Check if CUDA is working
+    int currentDevice;
+    if (cudaGetDevice( &currentDevice ) != 0){
+        // Try resetting
+        cudaDeviceReset();
+
+        cudaError_t err;
+        if ((err = cudaGetDevice( &currentDevice )) != 0){
+            throw std::runtime_error("Cannot use CUDA device: " + std::string(cudaGetErrorString(err)));
+        }
+    }
+
     popsift::cuda::device_prop_t deviceInfo;
     deviceInfo.set(0, false);
+    config = new popsift::Config();
 }
 
 PopSiftContext::~PopSiftContext(){
     ps->uninit();
     delete ps;
     ps = nullptr;
+    delete config;
+    config = nullptr;
 }
 
 void PopSiftContext::setup(float peak_threshold, float edge_threshold, bool use_root, float downsampling){
@@ -28,21 +43,21 @@ void PopSiftContext::setup(float peak_threshold, float edge_threshold, bool use_
     if (this->downsampling != downsampling) { this->downsampling = downsampling; changed = true; }
 
     if (changed){
-        config.setThreshold(peak_threshold);
-        config.setEdgeLimit(edge_threshold);
-        config.setNormMode(use_root ? popsift::Config::RootSift : popsift::Config::Classic );
-        config.setFilterSorting(popsift::Config::LargestScaleFirst);
-        config.setMode(popsift::Config::OpenCV);
-        config.setDownsampling(downsampling);
-        // config.setOctaves(4);
-        // config.setLevels(3);
+        config->setThreshold(peak_threshold);
+        config->setEdgeLimit(edge_threshold);
+        config->setNormMode(use_root ? popsift::Config::RootSift : popsift::Config::Classic );
+        config->setFilterSorting(popsift::Config::LargestScaleFirst);
+        config->setMode(popsift::Config::OpenCV);
+        config->setDownsampling(downsampling);
+        // config->setOctaves(4);
+        // config->setLevels(3);
 
         if (!ps){
-            ps = new PopSift(config,
+            ps = new PopSift(*config,
                         popsift::Config::ProcessingMode::ExtractingMode,
                         PopSift::ByteImages );
         }else{
-            ps->configure(config, false);
+            ps->configure(*config, false);
         }
     }
 }

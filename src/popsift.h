@@ -41,7 +41,7 @@ py::array_t<T> py_array_from_data(const T *data, size_t shape0, size_t shape1, s
 
 class PopSiftContext{
     PopSift *ps;
-    popsift::Config config;
+    popsift::Config *config;
 
     float peak_threshold = 0;
     float edge_threshold = 0;
