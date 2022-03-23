@@ -28,7 +28,6 @@ PopSiftContext::PopSiftContext() : ps(nullptr){
 }
 
 PopSiftContext::~PopSiftContext(){
-    ps->uninit();
     delete ps;
     ps = nullptr;
     delete config;
@@ -52,13 +51,13 @@ void PopSiftContext::setup(float peak_threshold, float edge_threshold, bool use_
         // config->setOctaves(4);
         // config->setLevels(3);
 
-        if (!ps){
-            ps = new PopSift(*config,
-                        popsift::Config::ProcessingMode::ExtractingMode,
-                        PopSift::ByteImages );
-        }else{
-            ps->configure(*config, false);
+        if (ps){
+            delete ps;
+            ps = nullptr;
         }
+        ps = new PopSift(*config,
+                    popsift::Config::ProcessingMode::ExtractingMode,
+                    PopSift::ByteImages );
     }
 }
 
