@@ -1,19 +1,20 @@
 import cv2
 import numpy as np
-from pypopsift import popsift, fits_texture
+from pypopsift import popsift
 import time
 
 print("Loading image...")
 
 files = [
-    "/datasets/brighton2/images/DJI_0032.JPG",
+    "/datasets/brighton2/images/DJI_0018.JPG",
+    "/datasets/brighton2/images/DJI_0019.JPG",
 ]
 config = {
-    'sift_peak_threshold': 0.06,
+    'sift_peak_threshold': 0.1,
     'sift_edge_threshold': 10.0,
-    'feature_min_frames': 8000,
+    'feature_min_frames': 24000,
     'feature_use_adaptive_suppression': False,
-    'feature_process_size': 2000
+    'feature_process_size': 2048
 }
 
 def resized_image(image, config):
@@ -26,18 +27,6 @@ def resized_image(image, config):
         return cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_AREA)
     else:
         return image
-
-def get_downsampling(image, config):
-    max_size = config['feature_process_size']
-    h, w = image.shape
-    size = max(w, h)
-    if 0 < max_size < size:
-        if w == size:
-            return w / float(max_size)
-        elif h == size:
-            return h / float(max_size)
-    else:
-        return -1
 
 for filename in files:
     flags = cv2.IMREAD_COLOR
@@ -53,22 +42,16 @@ for filename in files:
     image = resized_image(image, config)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
-    print("Test texture size...")
-    if not fits_texture(image.shape[1], image.shape[0]):
-        print("%s does not fit into GPU memory!" % filename)
-        exit(1)
-
     print("Computing features...")
-    print(image.shape)
     start = time.time()
     points, desc = popsift(image,
                             peak_threshold=config['sift_peak_threshold'],
                             edge_threshold=config['sift_edge_threshold'],
-                            target_num_features=config['feature_min_frames'])
+                            target_num_features=config['feature_min_frames'],
+                            downsampling=-1)
 
     print(points.shape)
     print(points)
     print(desc.shape)
     print(desc)
     print("Features computed in {:.3f} seconds".format(time.time() - start))
-
