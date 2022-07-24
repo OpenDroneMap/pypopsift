@@ -73,8 +73,6 @@ py::object popsift(pyarray_uint8 image,
                  float downsampling) {
     if (!image.size()) return py::none();
 
-    if (!ctx) ctx = new PopSiftContext();
-
     py::gil_scoped_release release;
 
     int width = image.shape(1);
@@ -83,6 +81,7 @@ py::object popsift(pyarray_uint8 image,
     
     while(true){
         g_mutex.lock();
+        if (!ctx) ctx = new PopSiftContext();
         ctx->setup(peak_threshold, edge_threshold, use_root, downsampling);
         std::unique_ptr<SiftJob> job(ctx->get()->enqueue( width, height, image.data() ));
         std::unique_ptr<popsift::Features> result(job->get());
@@ -112,6 +111,7 @@ py::object popsift(pyarray_uint8 image,
                 }
             }
 
+            py::gil_scoped_acquire acquire;
             py::list retn;
             retn.append(py_array_from_data(&points[0], numFeatures, 4));
             retn.append(py_array_from_data(&desc[0], numFeatures, 128));
@@ -123,6 +123,7 @@ py::object popsift(pyarray_uint8 image,
     }
 
     // We should never get here
+    py::gil_scoped_acquire acquire;
     return py::none();
 }
 
