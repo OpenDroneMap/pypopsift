@@ -8,7 +8,7 @@ include(FetchContent)
 set(PopSift_BUILD_EXAMPLES OFF)
 FetchContent_Declare(
   popsift
-  GIT_REPOSITORY https://github.com/uav4geo/popsift/
+  GIT_REPOSITORY https://github.com/alicevision/PopSift.git
   GIT_TAG        develop
 )
 set(FETCHCONTENT_QUIET OFF)
