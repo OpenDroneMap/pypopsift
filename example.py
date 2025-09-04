@@ -12,7 +12,7 @@ files = [
 config = {
     'sift_peak_threshold': 0.1,
     'sift_edge_threshold': 10.0,
-    'feature_min_frames': 8000,
+    'feature_min_frames': 24000,
     'feature_use_adaptive_suppression': False,
     'feature_process_size': 2048
 }
@@ -27,18 +27,6 @@ def resized_image(image, config):
         return cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_AREA)
     else:
         return image
-
-def get_downsampling(image, config):
-    max_size = config['feature_process_size']
-    h, w, _ = image.shape
-    size = max(w, h)
-    if 0 < max_size < size:
-        if w == size:
-            return w / float(max_size)
-        elif h == size:
-            return h / float(max_size)
-    else:
-        return -1
 
 for filename in files:
     flags = cv2.IMREAD_COLOR
@@ -56,15 +44,14 @@ for filename in files:
 
     print("Computing features...")
     start = time.time()
-    points, desc = popsift(image.astype(np.float32) / 255,  # values between 0, 1
-                                peak_threshold=config['sift_peak_threshold'],
-                                edge_threshold=config['sift_edge_threshold'],
-                                target_num_features=config['feature_min_frames'],
-                                downsampling=downsampling)
+    points, desc = popsift(image,
+                            peak_threshold=config['sift_peak_threshold'],
+                            edge_threshold=config['sift_edge_threshold'],
+                            target_num_features=config['feature_min_frames'],
+                            downsampling=-1)
 
     print(points.shape)
     print(points)
     print(desc.shape)
     print(desc)
     print("Features computed in {:.3f} seconds".format(time.time() - start))
-

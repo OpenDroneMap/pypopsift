@@ -10,14 +10,28 @@ PopSiftContext *ctx = nullptr;
 std::mutex g_mutex;
 
 PopSiftContext::PopSiftContext() : ps(nullptr){
+    // Check if CUDA is working
+    int currentDevice;
+    if (cudaGetDevice( &currentDevice ) != 0){
+        // Try resetting
+        cudaDeviceReset();
+
+        cudaError_t err;
+        if ((err = cudaGetDevice( &currentDevice )) != 0){
+            throw std::runtime_error("Cannot use CUDA device: " + std::string(cudaGetErrorString(err)));
+        }
+    }
+
     popsift::cuda::device_prop_t deviceInfo;
     deviceInfo.set(0, false);
+    config = new popsift::Config();
 }
 
 PopSiftContext::~PopSiftContext(){
-    ps->uninit();
     delete ps;
     ps = nullptr;
+    delete config;
+    config = nullptr;
 }
 
 void PopSiftContext::setup(float peak_threshold, float edge_threshold, bool use_root, float downsampling){
@@ -28,22 +42,22 @@ void PopSiftContext::setup(float peak_threshold, float edge_threshold, bool use_
     if (this->downsampling != downsampling) { this->downsampling = downsampling; changed = true; }
 
     if (changed){
-        config.setThreshold(peak_threshold);
-        config.setEdgeLimit(edge_threshold);
-        config.setNormMode(use_root ? popsift::Config::RootSift : popsift::Config::Classic );
-        config.setFilterSorting(popsift::Config::LargestScaleFirst);
-        config.setMode(popsift::Config::OpenCV);
-        config.setDownsampling(downsampling);
-        // config.setOctaves(4);
-        // config.setLevels(3);
+        config->setThreshold(peak_threshold);
+        config->setEdgeLimit(edge_threshold);
+        config->setNormMode(use_root ? popsift::Config::RootSift : popsift::Config::Classic );
+        config->setFilterSorting(popsift::Config::LargestScaleFirst);
+        config->setMode(popsift::Config::OpenCV);
+        config->setDownsampling(downsampling);
+        // config->setOctaves(4);
+        // config->setLevels(3);
 
-        if (!ps){
-            ps = new PopSift(config,
-                        popsift::Config::ProcessingMode::ExtractingMode,
-                        PopSift::ByteImages );
-        }else{
-            ps->configure(config, false);
+        if (ps){
+            delete ps;
+            ps = nullptr;
         }
+        ps = new PopSift(*config,
+                    popsift::Config::ProcessingMode::ExtractingMode,
+                    PopSift::ByteImages );
     }
 }
 
@@ -57,11 +71,9 @@ py::object popsift(pyarray_uint8 image,
                  int target_num_features,
                  bool use_root,
                  float downsampling) {
-    py::gil_scoped_release release;
-
     if (!image.size()) return py::none();
 
-    if (!ctx) ctx = new PopSiftContext();
+    py::gil_scoped_release release;
 
     int width = image.shape(1);
     int height = image.shape(0);
@@ -69,6 +81,7 @@ py::object popsift(pyarray_uint8 image,
     
     while(true){
         g_mutex.lock();
+        if (!ctx) ctx = new PopSiftContext();
         ctx->setup(peak_threshold, edge_threshold, use_root, downsampling);
         std::unique_ptr<SiftJob> job(ctx->get()->enqueue( width, height, image.data() ));
         std::unique_ptr<popsift::Features> result(job->get());
@@ -98,6 +111,7 @@ py::object popsift(pyarray_uint8 image,
                 }
             }
 
+            py::gil_scoped_acquire acquire;
             py::list retn;
             retn.append(py_array_from_data(&points[0], numFeatures, 4));
             retn.append(py_array_from_data(&desc[0], numFeatures, 128));
@@ -109,7 +123,16 @@ py::object popsift(pyarray_uint8 image,
     }
 
     // We should never get here
+    py::gil_scoped_acquire acquire;
     return py::none();
+}
+
+bool fitsTexture(int width, int height, float downsampling){
+    if (!ctx) ctx = new PopSiftContext();
+    ctx->setup(0.06, 10, true, downsampling);
+
+    PopSift::AllocTest a = ctx->get()->testTextureFit( width, height );
+    return a == PopSift::AllocTest::Ok;
 }
 
 }
