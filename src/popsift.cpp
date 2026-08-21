@@ -80,12 +80,21 @@ py::object popsift(pyarray_uint8 image,
     int numFeatures = 0;
     
     while(true){
-        g_mutex.lock();
-        if (!ctx) ctx = new PopSiftContext();
-        ctx->setup(peak_threshold, edge_threshold, use_root, downsampling);
-        std::unique_ptr<SiftJob> job(ctx->get()->enqueue( width, height, image.data() ));
+        std::unique_ptr<SiftJob> job;
+        {
+            // Hold the lock only for context setup + enqueue, not for the
+            // blocking job->get() below, so other threads can keep enqueueing
+            // while this call waits on the GPU. Safe even if setup() rebuilds
+            // the pipeline (different parameters): PopSift's teardown drains
+            // every already-queued job, including ones enqueued by other
+            // threads that already released this lock, before the old
+            // pipeline is torn down, so no in-flight job is ever stranded.
+            std::lock_guard<std::mutex> lock(g_mutex);
+            if (!ctx) ctx = new PopSiftContext();
+            ctx->setup(peak_threshold, edge_threshold, use_root, downsampling);
+            job.reset(ctx->get()->enqueue( width, height, image.data() ));
+        }
         std::unique_ptr<popsift::Features> result(job->get());
-        g_mutex.unlock();
 
         numFeatures = result->getFeatureCount();
 
@@ -128,6 +137,7 @@ py::object popsift(pyarray_uint8 image,
 }
 
 bool fitsTexture(int width, int height, float downsampling){
+    std::lock_guard<std::mutex> lock(g_mutex);
     if (!ctx) ctx = new PopSiftContext();
     ctx->setup(0.06, 10, true, downsampling);
 
